@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sliding Calculator</title>
+<style>
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: #000;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 15px;
+    height: 100vh;
+    color: white;
+  }
+  .calculator {
+    width: 100%;
+    max-width: 350px;
+  }
+  .top-icons {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 5px;
+  }
+  .top-icons button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .top-icons button.active {
+    color: #00c853;
+    text-shadow: 0px 0px 8px #00ff80;
+    transform: scale(1.1);
+  }
+  .panel-title {
+    text-align: center;
+    font-size: 1.1em;
+    color: #00ff80;
+    margin-bottom: 5px;
+    font-weight: bold;
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #555;
+    margin: 5px 0 10px;
+  }
+  .display {
+    background: black;
+    color: white;
+    font-size: 2em;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: right;
+    overflow-x: auto;
+    margin-bottom: 10px;
+  }
+  .small-del {
+  background: oklab(69.926% 0 -0.00008 / 0.991);
+  color: black;
+  font-size: 1em;
+  height: 45px;
+  width: 45px;
+  border-radius: 50%;
+}
+  
+  .buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  button {
+    height: 65px;
+    font-size: 1.4em;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: white;
+  }
+  .num { background: #212121; }
+  .op { background: #9e9e9e; color: black; }
+  .equal { background: #00c853; }
+  .small-btn {
+    height: 45px;
+    width: 45px;
+    font-size: 1.2em;
+    border-radius: 50%;
+  }
+
+  /* Panels */
+  .panel {
+    display: none;
+    background: #1e1e1e;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+    font-size: 0.9em;
+  }
+  .history-item {
+    border-bottom: 1px solid #444;
+    padding: 5px 0;
+  }
+
+  /* White on black style for converter & scientific buttons */
+  .panel button,
+  .panel input,
+  .panel select {
+    background: black;
+    color: white;
+    border-radius: 8px;
+    padding: 10px;
+    width: 100%;
+    font-size: 1em;
+    border: 1px solid #555;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  .panel button:hover {
+    background: #333;
+  }
+  .panel input,
+  .panel select {
+    cursor: text;
+  }
+
+  /* 2 per row layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  /* Animation */
+  .fade-slide {
+    animation: fadeSlide 0.3s ease-out;
+  }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <!-- Top icons -->
+  <div class="top-icons">
+    <button id="btnCalculator" onclick="toggleView('calculatorKeys', 'Calculator')">⌨</button>
+    <button id="btnHistory" onclick="toggleView('historyPanel', 'History')">⏱</button>
+    <button id="btnConverter" onclick="toggleView('converterPanel', 'Converter')">📏</button>
+    <button id="btnScientific" onclick="toggleView('scientificPanel', 'Scientific')">🧮</button>
+  </div>
+
+  <div class="panel-title" id="panelTitle">Calculator</div>
+  <hr>
+
+  <div class="display" id="display">0
+    <button class="small-del" onclick="deleteChar()">⌫</button>
+  </div>
+
+  <!-- Calculator Keys -->
+  <div class="buttons fade-slide" id="calculatorKeys">
+    <button class="op" onclick="clearDisplay()">C</button>
+    <button class="num" onclick="appendValue('(')">(</button>
+    <button class="num" onclick="appendValue(')')">)</button>
+    <button class="op" onclick="appendValue('/')">÷</button>
+
+    <button class="num" onclick="appendValue('7')">7</button>
+    <button class="num" onclick="appendValue('8')">8</button>
+    <button class="num" onclick="appendValue('9')">9</button>
+    <button class="op" onclick="appendValue('*')">×</button>
+
+    <button class="num" onclick="appendValue('4')">4</button>
+    <button class="num" onclick="appendValue('5')">5</button>
+    <button class="num" onclick="appendValue('6')">6</button>
+    <button class="op" onclick="appendValue('-')">−</button>
+
+    <button class="num" onclick="appendValue('1')">1</button>
+    <button class="num" onclick="appendValue('2')">2</button>
+    <button class="num" onclick="appendValue('3')">3</button>
+    <button class="op" onclick="appendValue('+')">+</button>
+
+    <button class="num" onclick="appendValue('%')">%</button>
+    <button class="num" onclick="appendValue('0')">0</button>
+    <button class="num" onclick="appendValue('.')">.</button>
+    <button class="equal" onclick="calculate()">=</button>
+  </div>
+
+  <!-- History Panel -->
+  <div class="panel fade-slide" id="historyPanel">
+    <strong>History:</strong>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- Converter Panel -->
+  <div class="panel fade-slide" id="converterPanel">
+    <strong>Unit Converter:</strong><br><br>
+    <div class="two-col">
+      <input type="number" id="unitInput" placeholder="Value">
+      <select id="unitFrom">
+        <option value="cm">cm</option>
+        <option value="m">m</option>
+      </select>
+      <select id="unitTo">
+        <option value="m">m</option>
+        <option value="cm">cm</option>
+      </select>
+      <div></div> <!-- empty for layout -->
+    </div>
+    <br>
+    <button onclick="convertUnits()">Convert</button>
+    <div id="unitResult" style="margin-top:10px;font-weight:bold;"></div>
+  </div>
+
+  <!-- Scientific Panel -->
+  <div class="panel fade-slide" id="scientificPanel">
+    <strong>Scientific Functions:</strong><br><br>
+    <div class="two-col">
+      <button onclick="appendValue('Math.sin(')">sin</button>
+      <button onclick="appendValue('Math.cos(')">cos</button>
+      <button onclick="appendValue('Math.tan(')">tan</button>
+      <button onclick="appendValue('Math.log(')">log</button>
+      <button onclick="appendValue('Math.sqrt(')">√</button>
+      <button onclick="appendValue('**')">^</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let display = document.getElementById("display");
+  let historyList = document.getElementById("historyList");
+  let panelTitle = document.getElementById("panelTitle");
+  let history = JSON.parse(localStorage.getItem("calcHistory")) || [];
+  let activePanel = localStorage.getItem("lastPanel") || 'calculatorKeys';
+
+  const iconButtons = {
+    calculatorKeys: document.getElementById("btnCalculator"),
+    historyPanel: document.getElementById("btnHistory"),
+    converterPanel: document.getElementById("btnConverter"),
+    scientificPanel: document.getElementById("btnScientific")
+  };
+
+  window.onload = () => {
+    toggleView(activePanel, getPanelName(activePanel), true);
+  };
+
+  function getPanelName(id) {
+    switch(id) {
+      case 'calculatorKeys': return 'Calculator';
+      case 'historyPanel': return 'History';
+      case 'converterPanel': return 'Converter';
+      case 'scientificPanel': return 'Scientific';
+      default: return 'Calculator';
+    }
+  }
+
+  function toggleView(id, title, firstLoad = false) {
+    document.querySelectorAll('.buttons, .panel').forEach(el => el.style.display = 'none');
+    Object.values(iconButtons).forEach(btn => btn.classList.remove("active"));
+
+    let target = document.getElementById(id);
+    target.style.display = (id === 'calculatorKeys') ? 'grid' : 'block';
+    target.classList.remove("fade-slide");
+    void target.offsetWidth;
+    target.classList.add("fade-slide");
+
+    iconButtons[id].classList.add("active");
+    panelTitle.textContent = title;
+
+    if (id === 'historyPanel') updateHistory();
+
+    activePanel = id;
+    localStorage.setItem("lastPanel", activePanel);
+  }
+
+  function appendValue(value) {
+    if (display.innerText === "0" && value !== "." && value !== "(") {
+      display.innerText = value;
+    } else {
+      display.innerText += value;
+    }
+  }
+
+  function clearDisplay() {
+    display.innerText = "0";
+  }
+
+  function deleteChar() {
+    if (display.innerText.length > 1) {
+      display.innerText = display.innerText.slice(0, -1);
+    } else {
+      display.innerText = "0";
+    }
+  }
+
+  function calculate() {
+    try {
+      let expression = display.innerText;
+      let result = eval(expression);
+      display.innerText = result;
+      history.unshift(expression + " = " + result);
+      localStorage.setItem("calcHistory", JSON.stringify(history));
+    } catch {
+      display.innerText = "Error";
+    }
+  }
+
+  function updateHistory() {
+    historyList.innerHTML = "";
+    history.forEach(item => {
+      let div = document.createElement("div");
+      div.textContent = item;
+      div.classList.add("history-item");
+      historyList.appendChild(div);
+    });
+  }
+
+  function convertUnits() {
+    let val = parseFloat(document.getElementById("unitInput").value);
+    let from = document.getElementById("unitFrom").value;
+    let to = document.getElementById("unitTo").value;
+    let res = val;
+
+    if (from === "cm" && to === "m") res = val / 100;
+    else if (from === "m" && to === "cm") res = val * 100;
+
+    document.getElementById("unitResult").textContent = res + " " + to;
+  }
+</script>
+
+</body>
+</html>
